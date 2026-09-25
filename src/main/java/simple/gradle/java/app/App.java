@@ -5,13 +5,8 @@ package simple.gradle.java.app;
 
 public class App {
     public static int getSum(int num1, int num2) {
-<<<<<<< HEAD
         int somme = num1+num2;
         return somme;
-=======
-        return num2+num1;
->>>>>>> origin/master
-
     }
 
     public static void main(String[] args) {
