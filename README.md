@@ -1,33 +1,8 @@
-# Simple Gradle Java APP
-Simple Java App Created with Gradle
-
-Please read this Article to make the best use of this git repo
-
-[https://adityasridhar.com/posts/how-to-get-started-with-gradle](https://adityasridhar.com/posts/how-to-get-started-with-gradle)
-
-## Cloning the Code
-
-Clone this code into your local using the following command
-
-`git clone https://github.com/aditya-sridhar/simple-gradle-java-app.git`
-
-## Building the Application 
-
-The application can be built using the following command 
-
-**Windows** : `gradlew.bat build`
-
-**Linux/MacOS**: `./gradlew build`
-
-## Running the Application
-
-The application can be run using the following command 
-
-**Windows** : `gradlew.bat run`
-
-**Linux/MacOS**: `./gradlew run`
-
-## Tests
-
-After the Application is built using the Build command, the test results report can be found in below file
-*build/reports/tests/test/index.html*
+c.4 : avec git remote add origin le chemin de remote
+c.7 : comme remote est un depot initialiser avec --bare , il ne contient pas les dossiers physiques , mais uniquement l historiaues des commits et la configuration
+d.4.a :git lol , montre que ma branche local et la branche distante pointent vers meme commit 
+d.4.b : git fetch ; montre un nouveau commit 
+d.4.c : le fichier ne contient pas la modification faite dans d.3.a
+d.4.d : il faut faire un merge pour recuperer les changements
+e.4 : un conflit se produit , pour le regler , dans le fichier modifier , en garde la version souhaitte et on fait un autre commit 
+7.b : un nouveau conflit s est produit ; pour le regler ; j ai fait un rebase , et en gardant la version souhaite , puis un autre commit 
