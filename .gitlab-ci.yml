@@ -1,6 +1,7 @@
 stages:
   - build
   - test
+  - stage
 
 variables:
   GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
@@ -35,3 +36,14 @@ tests:
     when: always
     reports:
       junit: build/test-results/test/*.xml
+
+package-latest:
+  image: docker:27
+  stage: package
+  needs: [compile, tests]
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+  script:
+    - echo "$CI_JOB_TOKEN" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+    - docker build -t "$CI_REGISTRY_IMAGE:latest" .
+    - docker push "$CI_REGISTRY_IMAGE:latest"
