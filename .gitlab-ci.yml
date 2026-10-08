@@ -39,7 +39,7 @@ tests:
 
 package-latest:
   image: docker:27
-  stage: package
+  stage: stage
   needs: [compile, tests]
   rules:
     - if: '$CI_COMMIT_BRANCH == "develop"'
