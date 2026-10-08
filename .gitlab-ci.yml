@@ -1,0 +1,104 @@
+stages:
+  - build
+  - test
+  - package
+  - release
+
+variables:
+  GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+
+.gradle:
+  image: eclipse-temurin:11-jdk
+  before_script:
+    - chmod +x gradlew
+  cache:
+    key: "gradle-$CI_COMMIT_REF_SLUG"
+    paths:
+      - .gradle/caches
+      - .gradle/wrapper
+
+.branches-only:
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: never
+    - when: always
+
+.release-tag:
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^[0-9]+\.[0-9]+\.[0-9]+$/'
+
+compile:
+  extends: [.gradle, .branches-only]
+  stage: build
+  script:
+    - ./gradlew installDist
+  artifacts:
+    paths:
+      - build/install/
+    expire_in: 1 week
+
+tests:
+  extends: [.gradle, .branches-only]
+  stage: test
+  script:
+    - ./gradlew test
+  artifacts:
+    when: always
+    reports:
+      junit: build/test-results/test/*.xml
+
+package-latest:
+  image: docker:27
+  stage: package
+  needs: [compile, tests]
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+  script:
+    - echo "$CI_JOB_TOKEN" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+    - docker build --provenance=false --sbom=false -t "$CI_REGISTRY_IMAGE:latest" .
+    - docker push "$CI_REGISTRY_IMAGE:latest"
+
+check-tag-on-main:
+  extends: .release-tag
+  stage: .pre
+  image: alpine:3
+  variables:
+    GIT_DEPTH: "0"
+  script:
+    - apk add --no-cache git
+    - git fetch origin main
+    - git merge-base --is-ancestor "$CI_COMMIT_SHA" FETCH_HEAD
+
+build-release:
+  extends: [.gradle, .release-tag]
+  stage: build
+  cache: []
+  script:
+    - ./gradlew clean installDist --no-build-cache --rerun-tasks
+  artifacts:
+    paths:
+      - build/install/
+    expire_in: 1 week
+
+package-release:
+  extends: .release-tag
+  stage: package
+  image: docker:27
+  needs: [build-release]
+  script:
+    - echo "$CI_JOB_TOKEN" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+    - docker build --no-cache --pull --provenance=false --sbom=false -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG" .
+    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG"
+
+release-note:
+  extends: .release-tag
+  stage: release
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  needs: [package-release]
+  script:
+    - echo "Creation de la release $CI_COMMIT_TAG"
+  release:
+    tag_name: "$CI_COMMIT_TAG"
+    name: "Release $CI_COMMIT_TAG"
+    description: "Version $CI_COMMIT_TAG. Image Docker : $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG"
